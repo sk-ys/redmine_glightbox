@@ -1,0 +1,199 @@
+/* Redmine GLightbox Styles */
+
+/* GLightbox customization */
+.gslide-inline {
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  overflow: hidden;
+}
+
+.gslide-inline iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 600px;
+  border: 0;
+}
+
+.gslide-description {
+  display: none;
+}
+
+.gslide-inner-content {
+  position: relative;
+}
+
+.glightbox-filename {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(75px + 12px);
+  max-width: calc(100% - 48px);
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: #e9edf2;
+  background: rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.gslide.current:not(
+    :is(
+      .gfadeIn,
+      .gfadeOut,
+      .gzoomIn,
+      .gzoomOut,
+      .gslideInRight,
+      .gslideOutLeft,
+      .gslideInLeft,
+      .gslideOutRight,
+      .zoomed
+    )
+  )
+  .glightbox-filename {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.ginlined-content:has(.glightbox-pdf-iframe) {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.ginlined-content:has(.glightbox-video-native) {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Hide prev/next buttons when zoomed */
+:is(.gprev, .gnext) {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+#glightbox-slider:has(.gslide.current.zoomed) ~ :is(.gprev, .gnext) {
+  opacity: 0;
+}
+
+.gslide-inline .ginner-container {
+  overflow: hidden;
+}
+
+.gslide-inline .gslide-media {
+  overflow: hidden;
+}
+
+.glightbox-pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  overflow: auto;
+}
+
+.glightbox-video-native {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #000;
+}
+
+/* Thumbnail panel customization */
+.glightbox-thumbs {
+  background-color: rgba(0, 0, 0, 0.75);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  height: 75px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  padding: 0;
+  width: 100%;
+  z-index: 99999;
+  flex-shrink: 0;
+  transition: bottom 0.3s ease;
+}
+
+.gcontainer:has(.gslide.current.zoomed) + .glightbox-thumbs {
+  bottom: -75px;
+}
+
+.glightbox-thumbs-outer {
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.glightbox-thumbs-outer::-webkit-scrollbar {
+  height: 6px;
+}
+
+.glightbox-thumbs-outer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.glightbox-thumbs-outer::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.glightbox-thumbs-outer::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.glightbox-thumbs-inner {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  height: 100%;
+  gap: 2px;
+  padding-left: 4px;
+  padding-right: 4px;
+  box-sizing: border-box;
+  width: max-content;
+  margin: auto;
+}
+
+.glightbox-thumb-btn {
+  cursor: pointer;
+  flex-shrink: 0;
+  background: transparent;
+  border: 2px solid transparent;
+  padding: 0;
+  height: 67px;
+  width: 85px;
+  border-radius: 2px;
+  user-select: none;
+  opacity: 0.7;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease;
+  overflow: hidden;
+  background-color: white;
+}
+
+.glightbox-thumb-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.glightbox-thumb-btn:hover,
+.glightbox-thumb-btn:focus {
+  opacity: 0.85;
+  outline: none;
+}
+
+.glightbox-thumb-btn.active {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.8);
+}

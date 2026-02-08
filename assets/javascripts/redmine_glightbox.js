@@ -21,6 +21,28 @@
     return match ? match[1] : null;
   }
 
+  // Parse URL query parameters
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  // Update URL with query parameter using attachment ID
+  function updateUrl(attachmentId, action = "replace") {
+    const url = new URL(window.location);
+    if (attachmentId !== null && attachmentId !== undefined) {
+      url.searchParams.set("glightbox", attachmentId);
+    } else {
+      url.searchParams.delete("glightbox");
+    }
+
+    if (action === "push") {
+      window.history.pushState({ glightbox: attachmentId }, "", url);
+    } else {
+      window.history.replaceState({ glightbox: attachmentId }, "", url);
+    }
+  }
+
   // Create thumbnail panel for GLightbox
   function createThumbnailPanel() {
     const panel = document.createElement("div");
@@ -37,6 +59,16 @@
 
     return { panel, outer, inner };
   }
+
+  // Global flag to track if we're navigating via browser history
+  let isHistoryNavigation = false;
+
+  // Listen to pageshow to detect bfcache restore
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      isHistoryNavigation = true;
+    }
+  });
 
   // Wait for DOM to be ready
   function initGLightbox() {
@@ -237,6 +269,11 @@
       return button;
     };
 
+    // Flag to track if closing from popstate event
+    let isClosingFromPopstate = false;
+    // Flag to track if lightbox is currently open
+    let isLightboxOpen = false;
+
     // Initialize GLightbox
     const lightbox = GLightbox({
       elements: items,
@@ -245,6 +282,7 @@
       autoplayVideos: false,
       preload: false,
       onOpen: () => {
+        isLightboxOpen = true;
         const container = document.querySelector(".glightbox-container");
         if (container) {
           container.appendChild(thumbPanel);
@@ -255,7 +293,9 @@
         toggleButton.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const isVisible = !thumbPanel.classList.contains("glightbox-thumbs-collapsed");
+          const isVisible = !thumbPanel.classList.contains(
+            "glightbox-thumbs-collapsed",
+          );
           thumbPanel.classList.toggle("glightbox-thumbs-collapsed", isVisible);
         });
         const closeBtn = container.querySelector(".gclose");
@@ -265,13 +305,33 @@
 
         const index = lightbox.getActiveSlideIndex();
         updateActiveThumbnail(index);
+
+        // Update URL with current attachment ID on open
+        // Use push for normal open, replace for history navigation to avoid creating duplicate history
+        if (isHistoryNavigation) {
+          updateUrl(attachmentIds[index], "replace");
+          isHistoryNavigation = false;
+        } else {
+          updateUrl(attachmentIds[index], "push");
+        }
       },
       beforeSlideChange: (_prev, current) => {
         updateActiveThumbnail(current.index);
+
+        // Update URL when slide changes with attachment ID (without creating new history entry)
+        updateUrl(attachmentIds[current.index]);
       },
       afterSlideLoad: (payload) => {
         ensureImageLoaded(payload);
         renderFilename(payload);
+      },
+      onClose: () => {
+        isLightboxOpen = false;
+        // When user closes manually, create new history entry without glightbox query
+        if (!isClosingFromPopstate) {
+          updateUrl(null, "push");
+        }
+        isClosingFromPopstate = false;
       },
     });
 
@@ -316,6 +376,45 @@
         }
       });
     });
+
+    // Handle browser back/forward buttons
+    window.addEventListener("popstate", (event) => {
+      const attachmentId = getQueryParam("glightbox");
+      isHistoryNavigation = true;
+
+      if (attachmentId !== null) {
+        // Find the index of the attachment ID
+        const index = attachmentIds.indexOf(attachmentId);
+        if (index >= 0) {
+          if (!isLightboxOpen) {
+            lightbox.openAt(index);
+          } else {
+            lightbox.goToSlide(index);
+          }
+        }
+        // If attachment ID not found, do nothing (don't open)
+      } else {
+        // Close lightbox if query param is removed
+        if (isLightboxOpen) {
+          isClosingFromPopstate = true;
+          lightbox.close();
+        }
+      }
+    });
+
+    // Check URL parameter on page load
+    const initialAttachmentId = getQueryParam("glightbox");
+    if (initialAttachmentId !== null) {
+      // Find the index of the attachment ID
+      const index = attachmentIds.indexOf(initialAttachmentId);
+      if (index >= 0) {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+          lightbox.openAt(index);
+        }, 100);
+      }
+      // If attachment ID not found, do nothing (don't open)
+    }
   }
 
   // Initialize when DOM is ready

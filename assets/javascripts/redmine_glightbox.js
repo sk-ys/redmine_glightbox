@@ -207,7 +207,7 @@
 
       const title = items[payload.index]?.title || "";
       const existing = slideNode.querySelector(".glightbox-filename");
-      
+
       if (!title) {
         if (existing) {
           existing.remove();
@@ -218,11 +218,23 @@
       const label = existing || document.createElement("div");
       label.className = "glightbox-filename";
       label.textContent = title;
-      
+
       if (!existing) {
         const inner = slideNode.querySelector(".gslide-inner-content");
         (inner || slideNode).appendChild(label);
       }
+    };
+
+    // Create thumbnail toggle button
+    const createThumbnailToggleButton = () => {
+      const button = document.createElement("button");
+      button.className = "glightbox-toggle-thumbs";
+      button.setAttribute("title", "Toggle thumbnails");
+      button.setAttribute("aria-label", "Toggle thumbnails");
+      // SVG for hide icon
+      button.innerHTML =
+        '<svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="0" y="2" width="24" height="20"/><rect x="2" y="16" width="5" height="5"/><rect x="9.5" y="16" width="5" height="5"/><rect x="17" y="16" width="5" height="5"/></svg>';
+      return button;
     };
 
     // Initialize GLightbox
@@ -237,6 +249,20 @@
         if (container) {
           container.appendChild(thumbPanel);
         }
+
+        // Create and add thumbnail toggle button
+        const toggleButton = createThumbnailToggleButton();
+        toggleButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isVisible = !thumbPanel.classList.contains("glightbox-thumbs-collapsed");
+          thumbPanel.classList.toggle("glightbox-thumbs-collapsed", isVisible);
+        });
+        const closeBtn = container.querySelector(".gclose");
+        if (closeBtn && !closeBtn.querySelector(".glightbox-toggle-thumbs")) {
+          closeBtn.parentElement.insertBefore(toggleButton, closeBtn);
+        }
+
         const index = lightbox.getActiveSlideIndex();
         updateActiveThumbnail(index);
       },

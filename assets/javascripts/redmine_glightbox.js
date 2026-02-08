@@ -44,7 +44,7 @@
   }
 
   // Create thumbnail panel for GLightbox
-  function createThumbnailPanel() {
+  function createThumbnailPanel(glightboxContent) {
     const panel = document.createElement("div");
     panel.className = "glightbox-thumbs";
 
@@ -57,7 +57,24 @@
     outer.appendChild(inner);
     panel.appendChild(outer);
 
-    return { panel, outer, inner };
+    // Create thumbnail buttons
+    glightboxContent.forEach((item, index) => {
+      const button = document.createElement("button");
+      button.className = "glightbox-thumb-btn";
+      button.setAttribute("title", item.title || `Image ${index + 1}`);
+      button.setAttribute("aria-label", item.title || `Image ${index + 1}`);
+      button.dataset.index = index;
+
+      if (item.thumb) {
+        const img = document.createElement("img");
+        img.src = item.thumb;
+        img.alt = item.title || `Image ${index + 1}`;
+        button.appendChild(img);
+      }
+      inner.appendChild(button);
+    });
+
+    return panel;
   }
 
   // Global flag to track if we're navigating via browser history
@@ -102,7 +119,11 @@
       return;
     }
 
-    const items = attachmentLinks.map((link) => {
+    const attachmentIds = Array.from(attachmentLinks).map((link) =>
+      parseAttachmentIdFromUrl(link.href),
+    );
+
+    const glightboxContent = attachmentLinks.map((link) => {
       const href = link.href;
       const attachmentId = parseAttachmentIdFromUrl(href);
       const isVideo = new RegExp(
@@ -159,25 +180,7 @@
     });
 
     // Create thumbnail panel HTML
-    const { panel: thumbPanel, inner: thumbInner } = createThumbnailPanel();
-
-    // Create thumbnail buttons
-    items.forEach((item, index) => {
-      const button = document.createElement("button");
-      button.className = "glightbox-thumb-btn";
-      button.setAttribute("title", item.title || `Image ${index + 1}`);
-      button.setAttribute("aria-label", item.title || `Image ${index + 1}`);
-      button.dataset.index = index;
-
-      if (item.thumb) {
-        const img = document.createElement("img");
-        img.src = item.thumb;
-        img.alt = item.title || `Image ${index + 1}`;
-        button.appendChild(img);
-      }
-
-      thumbInner.appendChild(button);
-    });
+    const thumbPanel = createThumbnailPanel(glightboxContent);
 
     // Function to update active thumbnail
     const updateActiveThumbnail = (index) => {
@@ -237,7 +240,7 @@
         return;
       }
 
-      const title = items[payload.index]?.title || "";
+      const title = glightboxContent[payload.index]?.title || "";
       const existing = slideNode.querySelector(".glightbox-filename");
 
       if (!title) {
@@ -276,7 +279,7 @@
 
     // Initialize GLightbox
     const lightbox = GLightbox({
-      elements: items,
+      elements: glightboxContent,
       touchNavigation: true,
       loop: false,
       autoplayVideos: false,
@@ -336,10 +339,6 @@
       },
     });
 
-    const attachmentIds = Array.from(attachmentLinks).map((link) =>
-      parseAttachmentIdFromUrl(link.href),
-    );
-
     // Add click handlers to thumbnails
     const thumbnailButtons = thumbPanel.querySelectorAll(
       ".glightbox-thumb-btn",
@@ -354,6 +353,7 @@
       });
     });
 
+    // Attach click handlers to target elements
     const targetElements = Array.from(
       document.querySelectorAll(
         "a[href]" +

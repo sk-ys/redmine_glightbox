@@ -116,7 +116,9 @@
   width: 100%;
   z-index: 99999;
   flex-shrink: 0;
-  transition: bottom 0.3s ease, opacity 0.05s ease;
+  transition:
+    bottom 0.3s ease,
+    opacity 0.05s ease;
   opacity: 1;
 }
 
@@ -224,7 +226,7 @@
     background-color 0.2s ease,
     border-color 0.2s ease,
     opacity 0.05s ease;
-  opacity: .7;
+  opacity: 1;
 }
 #glightbox-body.glightbox-closing .glightbox-toggle-thumbs {
   opacity: 0;
@@ -237,6 +239,7 @@
 @media (min-width: 992px) {
   .glightbox-clean .glightbox-toggle-thumbs {
     right: calc(20px + 35px); /* Account for space taken by .gclose button */
+    opacity: 0.7; /* Matches .gclose button styling */
   }
 }
 

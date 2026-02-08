@@ -9,9 +9,12 @@ A lightweight image gallery plugin for Redmine that integrates the [GLightbox](h
 - Display PDF attachments in an inline viewer
 - **Zoomable images** - Click to zoom, scroll wheel, pinch to zoom
 - **Thumbnail panel** with auto-scroll for easy navigation
+- **Thumbnail toggle** - Show/hide thumbnail panel with a toggle button
 - **Responsive** - Adapts to screen size
 - **Keyboard navigation** - Arrow keys to navigate, Escape to close
 - **Touch gestures** - Swipe to navigate on touch devices
+- **URL query support** - Share direct links to specific images with `?glightbox=attachmentId`
+- **Browser history navigation** - Back/forward buttons work seamlessly with the gallery
 - **Lightweight** - Fast and optimized performance
 
 ## Installation

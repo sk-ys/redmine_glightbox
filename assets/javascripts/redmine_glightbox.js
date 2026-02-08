@@ -361,22 +361,31 @@
           ':not([href*="/attachments/download/"])' +
           ", img[src]",
       ),
-    ).filter((el) => {
-      const href = el.href || el.src;
-      return attachmentIds.some((id) => href.includes(`/attachments/${id}`));
-    });
-
-    targetElements.forEach((el) => {
-      el.addEventListener("click", function (event) {
-        event.preventDefault();
+    )
+      .filter((el) => {
         const href = el.href || el.src;
-        const position = attachmentIds.indexOf(parseAttachmentIdFromUrl(href));
+        return attachmentIds.some((id) =>
+          href.match(
+            new RegExp(`/attachments/(?:(download|thumbnail)/)?${id}(?:/|$)`),
+          ),
+        );
+      })
+      .forEach((el) => {
+        el.addEventListener("click", function (event) {
+          event.preventDefault();
+          const href = el.href || el.src;
+          const position = attachmentIds.indexOf(
+            parseAttachmentIdFromUrl(href),
+          );
 
-        if (position >= 0) {
-          lightbox.openAt(position);
+          if (position >= 0) {
+            lightbox.openAt(position);
+          }
+        });
+        if (el.tagName.toLowerCase() === "img" && !el.closest("a")) {
+          el.style.cursor = "pointer";
         }
       });
-    });
 
     // Handle browser back/forward buttons
     window.addEventListener("popstate", (event) => {

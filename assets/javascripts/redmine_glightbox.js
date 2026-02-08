@@ -281,6 +281,7 @@
       loop: false,
       autoplayVideos: false,
       preload: false,
+      slideEffect: "fade",
       onOpen: () => {
         isLightboxOpen = true;
         const container = document.querySelector(".glightbox-container");

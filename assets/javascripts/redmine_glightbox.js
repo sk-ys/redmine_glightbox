@@ -144,20 +144,37 @@
           };
         }
 
+        // Try to get attachment data from sessionStorage
+        const storageKey = `redmine_glightbox_attachment_${id}`;
+        const cachedData = sessionStorage.getItem(storageKey);
+        if (cachedData) {
+          try {
+            return JSON.parse(cachedData);
+          } catch (e) {
+            console.warn("Failed to parse cached attachment data:", e);
+          }
+        }
+
         // Fetch attachment data from html page
-        // TODO: Pre-attach attachment information to data attributes
         let attachment = await fetch(`/attachments/${id}`)
           .then((response) => response.text())
           .then((html) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, "text/html");
-            return {
+            const data = {
               id: parseInt(id),
               filename: doc.querySelector("#content h2").textContent.trim(),
               content_url: doc.querySelector(
                 'a[href*="/attachments/download/"]',
               ).href,
             };
+            // Save to sessionStorage
+            try {
+              sessionStorage.setItem(storageKey, JSON.stringify(data));
+            } catch (e) {
+              console.warn("Failed to cache attachment data:", e);
+            }
+            return data;
           });
 
         return attachment;

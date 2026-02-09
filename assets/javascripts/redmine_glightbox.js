@@ -161,12 +161,13 @@
           .then((html) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, "text/html");
+            const content_url = doc.querySelector(
+              'a[href*="/attachments/download/"]',
+            )?.href;
             const data = {
               id: parseInt(id),
-              filename: doc.querySelector("#content h2").textContent.trim(),
-              content_url: doc.querySelector(
-                'a[href*="/attachments/download/"]',
-              ).href,
+              filename: content_url?.split("/").pop(),
+              content_url: content_url,
             };
             // Save to sessionStorage
             try {

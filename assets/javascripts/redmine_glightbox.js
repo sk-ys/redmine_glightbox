@@ -17,8 +17,10 @@
   };
 
   function parseAttachmentIdFromUrl(url) {
-    const match = url.match(/\/attachments\/(?:download\/)?(\d+)(?:\/|$)/);
-    return match ? match[1] : null;
+    const match = url.match(
+      /\/attachments\/(?:(download|thumbnail)\/)?(\d+)(?:\/|$)/,
+    );
+    return match ? parseInt(match[2]) : null;
   }
 
   // Parse URL query parameters
@@ -87,65 +89,128 @@
     }
   });
 
+  function extractFilenameFromElement(el) {
+    return (
+      el?.textContent ||
+      el?.alt ||
+      el?.title ||
+      (el?.href || el?.src).split("/").pop() ||
+      ""
+    );
+  }
+
   // Wait for DOM to be ready
-  function initGLightbox() {
+  async function initGLightbox() {
     if (typeof GLightbox === "undefined") {
       console.warn("GLightbox library not loaded");
       return;
     }
 
-    // Detect attachment links in the issue details attachment section
-    // and filter for image/video/pdf files
-    const attachmentLinks = Array.from(
-      document.querySelectorAll(
-        '.issue.details .attachments a[href*="/attachments/download/"]',
-      ),
-    ).filter((link) => {
-      const hrefLower = link.href.toLowerCase();
-      return hrefLower.match(
-        new RegExp(
-          "\\.(" +
-            imgExtensions.join("|") +
-            "|" +
-            videoExtensions.join("|") +
-            "|pdf" +
-            ")(\\?|$)",
-          "i",
-        ),
-      );
-    });
+    const controller = Array.from(document.body.classList)
+      .filter((item) => item.startsWith("controller-"))[0]
+      ?.replace("controller-", "");
+    const action = Array.from(document.body.classList)
+      .filter((item) => item.startsWith("action-"))[0]
+      ?.replace("action-", "");
 
-    if (attachmentLinks.length === 0) {
+    // Detect attachment links
+    const allAttachmentIds = Array.from(
+      document.querySelectorAll("#main :is(a[href], img[src])"),
+    )
+      .map((el) => parseAttachmentIdFromUrl(el.href || el.src))
+      .filter((id) => id !== null)
+      .filter((id, index, self) => id && self.indexOf(id) === index);
+
+    const allAttachmentDownloadLinks = Array.from(
+      document.querySelectorAll(
+        'a[href*="/attachments/download/"], ' +
+          'img[src*="/attachments/download/"]',
+      ),
+    );
+
+    // Fetch attachment data for each ID
+    const attachmentCandidates = await Promise.all(
+      allAttachmentIds.map(async (id) => {
+        // Try to find existing download link element first
+        const downloadElement = allAttachmentDownloadLinks.find((el) =>
+          (el.href || el.src).includes(`/attachments/download/${id}`),
+        );
+
+        if (downloadElement || (controller === "issues" && action === "show")) {
+          return {
+            id: parseInt(id),
+            filename: extractFilenameFromElement(downloadElement),
+            content_url: downloadElement?.href || downloadElement?.src,
+          };
+        }
+
+        // Fetch attachment data from html page
+        // TODO: Pre-attach attachment information to data attributes
+        let attachment = await fetch(`/attachments/${id}`)
+          .then((response) => response.text())
+          .then((html) => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+            return {
+              id: parseInt(id),
+              filename: doc.querySelector("#content h2").textContent.trim(),
+              content_url: doc.querySelector(
+                'a[href*="/attachments/download/"]',
+              ).href,
+            };
+          });
+
+        return attachment;
+      }),
+    );
+
+    const attachments = attachmentCandidates
+      .filter((attachment) => attachment && attachment.content_url)
+      .filter((attachment) => {
+        const urlLower = attachment.content_url?.toLowerCase();
+        return urlLower?.match(
+          new RegExp(
+            "\\.(" +
+              imgExtensions.join("|") +
+              "|" +
+              videoExtensions.join("|") +
+              "|pdf" +
+              ")(\\?|$)",
+            "i",
+          ),
+        );
+      });
+
+    if (!attachments || attachments.length === 0) {
       return;
     }
 
-    const attachmentIds = Array.from(attachmentLinks).map((link) =>
-      parseAttachmentIdFromUrl(link.href),
-    );
+    // Extract attachment IDs
+    const attachmentIds = attachments.map((attachment) => attachment.id);
 
-    const glightboxContent = attachmentLinks.map((link) => {
-      const href = link.href;
-      const attachmentId = parseAttachmentIdFromUrl(href);
+    // Prepare GLightbox content array
+    const glightboxContent = attachments.map((attachment) => {
+      const attachmentId = attachment.id;
+      const url = attachment.content_url;
       const isVideo = new RegExp(
         "\\.(" + videoExtensions.join("|") + ")(\\?|$)",
         "i",
-      ).test(href.toLowerCase());
-      const isPdf = /\.pdf(\\?|$)/i.test(href.toLowerCase());
-      const caption = link.textContent; // Filename
+      ).test(url.toLowerCase());
+      const isPdf = /\.pdf(\?|$)/i.test(url.toLowerCase());
+      const caption = attachment.filename;
       const thumbnailImgEl = document.querySelector(
         `img[src*='/attachments/thumbnail/${attachmentId}']`,
       );
 
       if (isVideo) {
-        const videoType = href
+        const videoType = url
           .toLowerCase()
           .match(
             new RegExp("\\.(" + videoExtensions.join("|") + ")(\\?|$)", "i"),
-          )[1]
-          .toLowerCase();
+          )[1];
         const mimeType = mimeTypeMap[videoType] || "video/mp4";
         const videoIconThumbnail = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333' width='100' height='100'/%3E%3Cpolygon fill='%23fff' points='41.25,31.25 41.25,68.75 68.75,50'/%3E%3C/svg%3E`;
-        const videoHtml = `<video class="glightbox-video-native" controls preload="metadata"><source src="${href}" type="${mimeType}"></video>`;
+        const videoHtml = `<video class="glightbox-video-native" controls preload="metadata"><source src="${url}" type="${mimeType}"></video>`;
 
         return {
           type: "inline",
@@ -159,7 +224,7 @@
 
       if (isPdf) {
         const pdfIconThumbnail = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e2e2e2' width='100' height='100'/%3E%3Ctext x='50' y='55' font-size='30' text-anchor='middle' fill='%23333' font-family='Arial, sans-serif'%3EPDF%3C/text%3E%3C/svg%3E`;
-        const iframeHtml = `<iframe class="glightbox-pdf-iframe" src="${href}" style="width: 100%; height: 100%;" loading="lazy"></iframe>`;
+        const iframeHtml = `<iframe class="glightbox-pdf-iframe" src="${url}" style="width: 100%; height: 100%;" loading="lazy"></iframe>`;
         return {
           type: "inline",
           content: iframeHtml,
@@ -171,10 +236,10 @@
       }
 
       return {
-        href: href,
+        href: url,
         type: "image",
         title: caption,
-        thumb: thumbnailImgEl?.src || href,
+        thumb: thumbnailImgEl?.src || url,
         alt: caption,
       };
     });

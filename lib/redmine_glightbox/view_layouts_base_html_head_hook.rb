@@ -4,8 +4,10 @@ module RedmineGlightbox
       controller = context[:controller]
       action = controller.action_name
 
-      if (controller.controller_name == 'issues' && ['show'].include?(action))
-        # TODO: Add support for the issues index page
+      if (
+        (controller.controller_name == 'issues' && ['show'].include?(action)) ||
+        (controller.controller_name == 'issues' && ['index'].include?(action)) ||
+        (controller.controller_name == 'issue_note_list' && ['index'].include?(action)))
         stylesheet_link_tag('glightbox.min', plugin: 'redmine_glightbox') +
         stylesheet_link_tag('redmine_glightbox', plugin: 'redmine_glightbox') +
         javascript_include_tag('glightbox.min', plugin: 'redmine_glightbox') +

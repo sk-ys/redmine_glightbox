@@ -15,6 +15,12 @@
     flv: "video/x-flv",
     mkv: "video/x-matroska",
   };
+  const scriptPath = "/assets/plugin_assets/redmine_glightbox";
+  const scriptEl = document.querySelector(
+    "head script[src*='" + scriptPath + "']",
+  );
+  const homeUrl =
+    scriptEl && scriptEl.src ? scriptEl.src.split(scriptPath)[0] : "";
 
   function parseAttachmentIdFromUrl(url) {
     const match = url.match(
@@ -156,7 +162,7 @@
         }
 
         // Fetch attachment data from html page
-        let attachment = await fetch(`/attachments/${id}`)
+        let attachment = await fetch(`${homeUrl}/attachments/${id}`)
           .then((response) => response.text())
           .then((html) => {
             const parser = new DOMParser();

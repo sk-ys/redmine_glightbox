@@ -175,18 +175,22 @@
               filename: content_url?.split("/").pop(),
               content_url: content_url,
             };
-            // Save to sessionStorage
-            try {
-              sessionStorage.setItem(storageKey, JSON.stringify(data));
-            } catch (e) {
-              console.warn("Failed to cache attachment data:", e);
-            }
             return data;
           });
 
         return attachment;
       }),
     );
+
+    // Save to sessionStorage
+    attachmentCandidates.forEach((attachmentData) => {
+      const storageKey = `redmine_glightbox_attachment_${attachmentData.id}`;
+      try {
+        sessionStorage.setItem(storageKey, JSON.stringify(attachmentData));
+      } catch (e) {
+        console.warn("Failed to cache attachment data:", e);
+      }
+    });
 
     const attachments = attachmentCandidates
       .filter((attachment) => attachment && attachment.content_url)

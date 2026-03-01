@@ -256,3 +256,7 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+.glightbox-target {
+  cursor: pointer;
+}

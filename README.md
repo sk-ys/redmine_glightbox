@@ -35,6 +35,39 @@ Links to image, video, and PDF files are also supported.
 
 Use the thumbnail panel at the bottom to navigate between attachments.
 
+### Public API
+
+For advanced usage, the plugin exposes a public API through `window.redmineGLightbox`:
+
+#### `regenerate()`
+Regenerate the GLightbox gallery after dynamic content changes (e.g., AJAX updates that add new attachments).
+
+```javascript
+// Regenerate the gallery
+window.redmineGLightbox.regenerate();
+```
+
+#### `getLightbox()`
+Get the current GLightbox instance for direct manipulation.
+
+```javascript
+// Get the lightbox instance
+const lightbox = window.redmineGLightbox.getLightbox();
+
+// Open at specific index
+if (lightbox) {
+  lightbox.openAt(0);
+}
+```
+
+**Example use case:** If you dynamically add attachments to the page via JavaScript, call `regenerate()` to update the gallery:
+
+```javascript
+// After adding new attachments to the DOM
+await addNewAttachmentsToDom();
+window.redmineGLightbox.regenerate();
+```
+
 ## Requirements
 
 - Redmine 6.1 (Other versions are untested.)

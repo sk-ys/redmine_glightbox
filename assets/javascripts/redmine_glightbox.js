@@ -4,6 +4,9 @@
 (function () {
   "use strict";
 
+  // Public API for external regeneration
+  window.redmineGLightbox = window.redmineGLightbox || {};
+
   const imgExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"];
   const videoExtensions = ["mp4", "webm", "ogg", "mov", "avi", "flv", "mkv"];
   const mimeTypeMap = {
@@ -21,6 +24,10 @@
   );
   const homeUrl =
     scriptEl && scriptEl.src ? scriptEl.src.split(scriptPath)[0] : "";
+
+  // Store state for regeneration
+  let currentLightbox = null;
+  let currentThumbnailPanel = null;
 
   function parseAttachmentIdFromUrl(url) {
     const match = url.match(
@@ -109,6 +116,25 @@
     return (
       `${homeUrl}/attachments/download/${id}/` + encodeURIComponent(filename)
     );
+  }
+
+  // Cleanup function to destroy existing lightbox
+  function cleanupGLightbox() {
+    if (currentLightbox) {
+      currentLightbox.destroy();
+      currentLightbox = null;
+    }
+
+    if (currentThumbnailPanel) {
+      currentThumbnailPanel.remove();
+      currentThumbnailPanel = null;
+    }
+
+    // Remove event handlers and class from target elements
+    $("#content").off("click", ".glightbox-target");
+    document.querySelectorAll(".glightbox-target").forEach((el) => {
+      el.classList.remove("glightbox-target");
+    });
   }
 
   // Wait for DOM to be ready
@@ -275,6 +301,7 @@
 
     // Create thumbnail panel HTML
     const thumbPanel = createThumbnailPanel(glightboxContent);
+    currentThumbnailPanel = thumbPanel;
 
     // Function to update active thumbnail
     const updateActiveThumbnail = (index) => {
@@ -433,6 +460,9 @@
       },
     });
 
+    // Store current lightbox instance
+    currentLightbox = lightbox;
+
     // Add click handlers to thumbnails
     const thumbnailButtons = thumbPanel.querySelectorAll(
       ".glightbox-thumb-btn",
@@ -447,7 +477,7 @@
       });
     });
 
-    // Attach click handlers to target elements
+    // Add class to target elements
     const targetElements = Array.from(
       document.querySelectorAll(
         "a[href]" +
@@ -464,22 +494,21 @@
           ),
         );
       })
-      .forEach((el) => {
-        el.addEventListener("click", function (event) {
-          event.preventDefault();
-          const href = el.href || el.src;
-          const position = attachmentIds.indexOf(
-            parseAttachmentIdFromUrl(href),
-          );
-
-          if (position >= 0) {
-            lightbox.openAt(position);
-          }
-        });
-        if (el.tagName.toLowerCase() === "img" && !el.closest("a")) {
-          el.style.cursor = "pointer";
-        }
+      .map((el) => {
+        el.classList.add("glightbox-target");
+        return el;
       });
+
+    // Attach click handlers to target elements to open lightbox
+    $("#content").on("click", ".glightbox-target", function (e) {
+      const href = this.href || this.src;
+      const attachmentId = parseAttachmentIdFromUrl(href);
+      const index = attachmentIds.indexOf(attachmentId);
+      if (index >= 0) {
+        e.preventDefault();
+        lightbox.openAt(index);
+      }
+    });
 
     // Handle browser back/forward buttons
     window.addEventListener("popstate", (event) => {
@@ -527,4 +556,35 @@
   } else {
     initGLightbox();
   }
+
+  // Public API for external regeneration
+  window.redmineGLightbox.regenerate = async function () {
+    /**
+     * Regenerate glightbox items
+     *
+     * @returns {Promise<void>}
+     *
+     * Usage:
+     * - window.redmineGLightbox.regenerate();
+     */
+    // Cleanup existing lightbox
+    cleanupGLightbox();
+
+    // Reinitialize
+    await initGLightbox();
+  };
+
+  // Public API to get current lightbox instance
+  window.redmineGLightbox.getLightbox = function () {
+    /**
+     * Get the current lightbox instance
+     *
+     * @returns {object|null} Current GLightbox instance or null
+     *
+     * Usage:
+     * - const lb = window.redmineGLightbox.getLightbox();
+     * - lb.openAt(0); // Open first item
+     */
+    return currentLightbox;
+  };
 })();

@@ -100,7 +100,7 @@
       el?.textContent ||
       el?.alt ||
       el?.title ||
-      (el?.href || el?.src).split("/").pop() ||
+      decodeURIComponent((el?.href || el?.src).split("/").pop()) ||
       ""
     );
   }
@@ -172,7 +172,7 @@
             )?.href;
             const data = {
               id: parseInt(id),
-              filename: content_url?.split("/").pop(),
+              filename: decodeURIComponent(content_url?.split("/").pop()),
               content_url: content_url,
             };
             return data;

@@ -105,6 +105,12 @@
     );
   }
 
+  function generateDownloadUrl(id, filename) {
+    return (
+      `${homeUrl}/attachments/download/${id}/` + encodeURIComponent(filename)
+    );
+  }
+
   // Wait for DOM to be ready
   async function initGLightbox() {
     if (typeof GLightbox === "undefined") {
@@ -120,38 +126,33 @@
       ?.replace("action-", "");
 
     // Detect attachment links
-    const allAttachmentIds = Array.from(
+    const allAttachments = Array.from(
       document.querySelectorAll("#main :is(a[href], img[src])"),
     )
-      .map((el) => parseAttachmentIdFromUrl(el.href || el.src))
-      .filter((id) => id !== null)
-      .filter((id, index, self) => id && self.indexOf(id) === index);
-
-    const allAttachmentDownloadLinks = Array.from(
-      document.querySelectorAll(
-        'a[href*="/attachments/download/"], ' +
-          'img[src*="/attachments/download/"]',
-      ),
-    );
+      .map((el) => {
+        const url = el.href || el.src;
+        const id = parseAttachmentIdFromUrl(url);
+        const filename = id ? extractFilenameFromElement(el) : null;
+        const content_url =
+          id && filename ? generateDownloadUrl(id, filename) : null;
+        return { id, filename, content_url };
+      })
+      .filter((item) => item.id !== null)
+      .filter(
+        // Remove duplicates based on ID, keeping the first occurrence
+        (item, index, self) =>
+          item && self.findIndex((i) => i.id === item.id) === index,
+      );
 
     // Fetch attachment data for each ID
     const attachmentCandidates = await Promise.all(
-      allAttachmentIds.map(async (id) => {
-        // Try to find existing download link element first
-        const downloadElement = allAttachmentDownloadLinks.find((el) =>
-          (el.href || el.src).includes(`/attachments/download/${id}`),
-        );
-
-        if (downloadElement || (controller === "issues" && action === "show")) {
-          return {
-            id: parseInt(id),
-            filename: extractFilenameFromElement(downloadElement),
-            content_url: downloadElement?.href || downloadElement?.src,
-          };
+      allAttachments.map(async (attachment) => {
+        if (attachment.content_url) {
+          return attachment;
         }
 
         // Try to get attachment data from sessionStorage
-        const storageKey = `redmine_glightbox_attachment_${id}`;
+        const storageKey = `redmine_glightbox_attachment_${attachment.id}`;
         const cachedData = sessionStorage.getItem(storageKey);
         if (cachedData) {
           try {
@@ -162,23 +163,23 @@
         }
 
         // Fetch attachment data from html page
-        let attachment = await fetch(`${homeUrl}/attachments/${id}`)
+        const content_url = await fetch(
+          `${homeUrl}/attachments/${attachment.id}`,
+        )
           .then((response) => response.text())
           .then((html) => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, "text/html");
-            const content_url = doc.querySelector(
-              'a[href*="/attachments/download/"]',
-            )?.href;
-            const data = {
-              id: parseInt(id),
-              filename: decodeURIComponent(content_url?.split("/").pop()),
-              content_url: content_url,
-            };
-            return data;
+            return doc.querySelector('a[href*="/attachments/download/"]')?.href;
           });
 
-        return attachment;
+        return {
+          id: attachment.id,
+          filename:
+            attachment.filename ||
+            decodeURIComponent(content_url?.split("/").pop()),
+          content_url: content_url,
+        };
       }),
     );
 

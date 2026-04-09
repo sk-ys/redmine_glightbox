@@ -39,7 +39,23 @@
   // Parse URL query parameters
   function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(param);
+    const value = urlParams.get(param);
+
+    if (param === "glightbox" && value !== null) {
+      if (!/^\d+$/.test(value)) {
+        return null;
+      }
+
+      const attachmentId = Number.parseInt(value, 10);
+      return Number.isNaN(attachmentId) ? null : attachmentId;
+    }
+
+    return value;
+  }
+
+  function hasQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.has(param);
   }
 
   // Update URL with query parameter using attachment ID
@@ -512,10 +528,11 @@
 
     // Handle browser back/forward buttons
     window.addEventListener("popstate", (event) => {
+      const hasAttachmentParam = hasQueryParam("glightbox");
       const attachmentId = getQueryParam("glightbox");
       isHistoryNavigation = true;
 
-      if (attachmentId !== null) {
+      if (hasAttachmentParam && attachmentId !== null) {
         // Find the index of the attachment ID
         const index = attachmentIds.indexOf(attachmentId);
         if (index >= 0) {
@@ -524,6 +541,8 @@
           } else {
             lightbox.goToSlide(index);
           }
+        } else {
+          updateUrl(null);
         }
         // If attachment ID not found, do nothing (don't open)
       } else {
@@ -531,13 +550,16 @@
         if (isLightboxOpen) {
           isClosingFromPopstate = true;
           lightbox.close();
+        } else if (hasAttachmentParam) {
+          updateUrl(null);
         }
       }
     });
 
     // Check URL parameter on page load
+    const hasInitialAttachmentParam = hasQueryParam("glightbox");
     const initialAttachmentId = getQueryParam("glightbox");
-    if (initialAttachmentId !== null) {
+    if (hasInitialAttachmentParam && initialAttachmentId !== null) {
       // Find the index of the attachment ID
       const index = attachmentIds.indexOf(initialAttachmentId);
       if (index >= 0) {
@@ -545,8 +567,12 @@
         setTimeout(() => {
           lightbox.openAt(index);
         }, 100);
+      } else {
+        updateUrl(null);
       }
       // If attachment ID not found, do nothing (don't open)
+    } else if (hasInitialAttachmentParam) {
+      updateUrl(null);
     }
   }
 

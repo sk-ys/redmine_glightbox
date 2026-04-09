@@ -1,5 +1,5 @@
 // Redmine GLightbox Integration
-// Automatically enhances images in Redmine issues with GLightbox
+// Automatically enhances supported Redmine attachments with GLightbox
 
 (function () {
   "use strict";

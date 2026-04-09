@@ -1,10 +1,10 @@
 # Redmine GLightbox Plugin
 
-A lightweight image gallery plugin for Redmine that integrates the [GLightbox](https://github.com/biati-digital/glightbox) JavaScript library to display images attached to issues.
+A lightweight image gallery plugin for Redmine that integrates the [GLightbox](https://github.com/biati-digital/glightbox) JavaScript library to display supported attachments on core content pages.
 
 ## Features
 
-- Display images with GLightbox on the issue page (jpg, png, gif, bmp, webp, svg)
+- Display images with GLightbox on issues, wiki, news, forums, documents, and files pages (jpg, png, gif, bmp, webp, svg)
 - Display video attachments with HTML5 controls (mp4, webm, ogg, mov, avi, flv, mkv)
 - Display PDF attachments in an inline viewer
 - **Zoomable images** - Click to zoom, scroll wheel, pinch to zoom
@@ -30,7 +30,7 @@ git clone https://github.com/sk-ys/redmine_glightbox.git
 
 ## Usage
 
-Click an image, video, or PDF file on an issue page and GLightbox opens automatically.
+Click an image, video, or PDF file on a supported page and GLightbox opens automatically.
 Links to image, video, and PDF files are also supported.
 
 Use the thumbnail panel at the bottom to navigate between attachments.

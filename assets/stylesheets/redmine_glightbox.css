@@ -41,6 +41,11 @@
   opacity: 0;
 }
 
+/* Hide filename when hovering over image */
+.gslide.current .ginner-container:has(img:hover) ~ .glightbox-filename {
+    opacity: 0;
+}
+
 .gslide.current:not(
     :is(
       .gfadeIn,

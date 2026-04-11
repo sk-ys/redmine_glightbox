@@ -5,7 +5,7 @@ Redmine::Plugin.register :redmine_glightbox do
   name 'Redmine GLightbox plugin'
   author 'sk-ys'
   description 'A GLightbox integration plugin for Redmine'
-  version '0.4.0'
+  version '0.4.1'
   url 'http://github.com/sk-ys/redmine_glightbox'
   author_url 'http://github.com/sk-ys'
 end

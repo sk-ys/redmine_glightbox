@@ -1,5 +1,5 @@
-$LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/lib')
-require_dependency 'redmine_glightbox/view_layouts_base_html_head_hook'
+# Load the hook here only when eager loading is disabled; in production it is loaded via plugin lib eager loading.
+require_relative 'lib/redmine_glightbox/view_layouts_base_html_head_hook' unless Rails.application.config.eager_load
 
 Redmine::Plugin.register :redmine_glightbox do
   name 'Redmine GLightbox plugin'

@@ -409,6 +409,17 @@
       return button;
     }
 
+    function getParents(el, selector) {
+      const parents = [];
+      while ((el = el.parentElement) !== null) {
+        if (el.nodeType !== Node.ELEMENT_NODE) continue;
+        if (!selector || el.matches(selector)) {
+          parents.push(el);
+        }
+      }
+      return parents;
+    }
+
     // Flag to track if closing from popstate event
     let isClosingFromPopstate = false;
     // Flag to track if lightbox is currently open
@@ -494,7 +505,7 @@
     });
 
     // Add class to target elements
-    const targetElements = Array.from(
+    let targetElements = Array.from(
       document.querySelectorAll(
         "a[href]" +
           ':not([data-method="delete"])' +
@@ -514,6 +525,17 @@
         el.classList.add("glightbox-target");
         return el;
       });
+
+    // Remove duplicate target elements (e.g. thumbnail)
+    targetElements = targetElements.filter((el) => {
+      const hasParent = getParents(el, ".glightbox-target").some((parent) => {
+        return el !== parent && parent.contains(el);
+      });
+      if (hasParent) {
+        el.classList.remove("glightbox-target");
+      }
+      return !hasParent;
+    });
 
     // Attach click handlers to target elements to open lightbox
     $("#content").on("click", ".glightbox-target", function (e) {

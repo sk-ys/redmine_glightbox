@@ -24,6 +24,8 @@
   );
   const homeUrl =
     scriptEl && scriptEl.src ? scriptEl.src.split(scriptPath)[0] : "";
+  const zoomLevels = [1.2, 1.5, 2, 3, 5];
+  const maxZoomScale = zoomLevels[zoomLevels.length - 1];
 
   // Store state for regeneration
   let currentLightbox = null;
@@ -242,11 +244,11 @@
         return urlLower?.match(
           new RegExp(
             "\\.(" +
-              imgExtensions.join("|") +
-              "|" +
-              videoExtensions.join("|") +
-              "|pdf" +
-              ")(\\?|$)",
+            imgExtensions.join("|") +
+            "|" +
+            videoExtensions.join("|") +
+            "|pdf" +
+            ")(\\?|$)",
             "i",
           ),
         );
@@ -342,6 +344,410 @@
       }
     };
 
+    const getSlideImage = (slideNode) => {
+      return slideNode?.querySelector(".gslide-image img") || null;
+    };
+
+    const getZoomViewport = (slideNode) => {
+      return (
+        slideNode?.querySelector(".ginner-container") ||
+        slideNode?.querySelector(".gslide-inner-content") ||
+        slideNode
+      );
+    };
+
+    const clampZoomScale = (value) => {
+      if (value <= 0) {
+        return 0;
+      }
+
+      return Math.min(maxZoomScale, Math.max(zoomLevels[0], value));
+    };
+
+    const getNextZoomScale = (currentScale, direction) => {
+      if (direction > 0) {
+        return zoomLevels.find((scale) => scale > currentScale) || maxZoomScale;
+      }
+
+      const previousLevels = zoomLevels.filter((scale) => scale < currentScale);
+      return previousLevels.length > 0
+        ? previousLevels[previousLevels.length - 1]
+        : 0;
+    };
+
+    const isNativeZoomAvailable = (slideNode, img) => {
+      return Boolean(
+        slideNode &&
+        img &&
+        slideNode.classList.contains("zoomed") &&
+        img.classList.contains("zoomable") &&
+        window.innerWidth > 768 &&
+        img.dataset.rgZoomMode !== "manual",
+      );
+    };
+
+    const getCurrentZoomScale = (slideNode, img) => {
+      const customScale = Number.parseFloat(img?.dataset.rgZoomScale || "");
+
+      if (!Number.isNaN(customScale) && customScale > 0) {
+        return customScale;
+      }
+
+      return slideNode?.classList.contains("zoomed") ? 1 : 0;
+    };
+
+    const getManualZoomOffset = (img) => {
+      const offsetX = Number.parseFloat(img?.dataset.rgZoomOffsetX || "0");
+      const offsetY = Number.parseFloat(img?.dataset.rgZoomOffsetY || "0");
+
+      return {
+        x: Number.isNaN(offsetX) ? 0 : offsetX,
+        y: Number.isNaN(offsetY) ? 0 : offsetY,
+      };
+    };
+
+    const renderManualZoomTransform = (img, autoCorrect = true) => {
+      if (!img) {
+        return;
+      }
+
+
+      const viewPort = getZoomViewport(img.closest(".gslide"));
+      const overflow = {
+        x: Math.max(0, img.offsetWidth - viewPort.offsetWidth),
+        y: Math.max(0, img.offsetHeight - viewPort.offsetHeight)
+      };
+
+      const correction = autoCorrect ? {
+        x: canUseNativeZoom(img) ?
+          -getImageContainer(img).getBoundingClientRect().left : 0,
+        y: 0,
+      } : { x: 0, y: 0 };
+
+      const dragOffset = getManualZoomOffset(img);
+      const currentScale = getCurrentZoomScale(img.closest(".gslide"), img);
+      const totalOffset = {
+        x: dragOffset.x * currentScale + (correction.x || 0) - overflow.x / 2,
+        y: dragOffset.y * currentScale + (correction.y || 0) - overflow.y / 2
+      };
+
+      if (totalOffset.x === 0 && totalOffset.y === 0) {
+        img.style.transform = "";
+        return;
+      }
+
+      img.style.transform = `translate3d(${totalOffset.x}px, ${totalOffset.y}px, 0)`;
+    };
+
+    const applyManualZoomOffset = (img, offsetX, offsetY) => {
+      if (!img) {
+        return;
+      }
+
+      img.dataset.rgZoomOffsetX = String(offsetX);
+      img.dataset.rgZoomOffsetY = String(offsetY);
+      renderManualZoomTransform(img);
+    };
+
+    const resetManualZoomOffset = (img) => {
+      if (!img) {
+        return;
+      }
+
+      delete img.dataset.rgZoomOffsetX;
+      delete img.dataset.rgZoomOffsetY;
+      renderManualZoomTransform(img, false);
+    };
+
+    const clearManualZoom = (slideNode, img) => {
+      if (!slideNode || !img) {
+        return;
+      }
+
+      delete img.dataset.rgZoomScale;
+      delete img.dataset.rgZoomMode;
+      img.style.width = "";
+      img.style.height = "";
+      img.style.maxWidth = "";
+      img.style.maxHeight = "";
+      img.style.transformOrigin = "";
+      img.classList.remove("rg-manual-zoom", "dragging");
+      img.isDragging = false;
+      resetManualZoomOffset(img);
+
+      if (img.parentElement) {
+        img.parentElement.style.transform = "";
+      }
+
+      slideNode.classList.remove("zoomed");
+    };
+
+    const applyZoom = (slideNode, img, scale) => {
+      if (!slideNode || !img) {
+        return 0;
+      }
+
+      const currentScale = getCurrentZoomScale(slideNode, img);
+      const nextScale = clampZoomScale(scale);
+
+      if (nextScale <= 0) {
+        clearManualZoom(slideNode, img);
+        return 0;
+      }
+
+      img.dataset.rgZoomScale = String(nextScale);
+      img.dataset.rgZoomMode = "manual";
+      img.style.width = `${img.naturalWidth * nextScale}px`;
+      img.style.height = `${img.naturalHeight * nextScale}px`;
+      img.style.maxWidth = "none";
+      img.style.maxHeight = "none";
+      img.style.transformOrigin = "center center";
+      img.classList.add("rg-manual-zoom");
+
+      renderManualZoomTransform(img);
+
+      slideNode.classList.add("zoomed");
+
+      return nextScale;
+    };
+
+    const restoreNativeZoom = (img) => {
+      if (!img) {
+        return;
+      }
+
+      delete img.dataset.rgZoomScale;
+      delete img.dataset.rgZoomMode;
+      img.style.width = "";
+      img.style.height = "";
+      img.style.maxWidth = `${img.naturalWidth}px`;
+      img.style.maxHeight = `${img.naturalHeight}px`;
+      img.classList.remove("rg-manual-zoom", "dragging");
+      img.isDragging = false;
+      resetManualZoomOffset(img);
+      img.style.transformOrigin = "center center";
+    };
+
+    const dispatchNativeImageClick = (img) => {
+      if (!img) {
+        return;
+      }
+
+      img.dispatchEvent(
+        new MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        }),
+      );
+    };
+
+    let zoomInButton = null;
+    let zoomOutButton = null;
+
+    const updateZoomButtons = () => {
+      if (!zoomInButton || !zoomOutButton) {
+        return;
+      }
+
+      const slideNode = document.querySelector(".gslide.current");
+      const img = getSlideImage(slideNode);
+
+      if (!slideNode || !img) {
+        zoomInButton.disabled = true;
+        zoomOutButton.disabled = true;
+        return;
+      }
+
+      const currentScale = getCurrentZoomScale(slideNode, img);
+      zoomInButton.disabled = currentScale >= maxZoomScale;
+      zoomOutButton.disabled = currentScale <= 0;
+    };
+
+    const syncImageZoomState = (slideNode) => {
+      const img = getSlideImage(slideNode);
+
+      if (!slideNode || !img) {
+        updateZoomButtons();
+        return;
+      }
+
+      if (!slideNode.classList.contains("zoomed")) {
+        delete img.dataset.rgZoomScale;
+        delete img.dataset.rgZoomMode;
+        img.style.transformOrigin = "";
+      } else if (img.dataset.rgZoomMode !== "manual") {
+        if (getCurrentZoomScale(slideNode, img) <= 1) {
+          delete img.dataset.rgZoomScale;
+          delete img.dataset.rgZoomMode;
+        }
+      }
+
+      updateZoomButtons();
+    };
+
+    const canUseNativeZoom = (img) => {
+      return Boolean(img.classList.contains("zoomable") && window.innerWidth > 768);
+    };
+
+    const getImageContainer = (img) => {
+      return img.closest(".gslide-image") || img.parentElement;
+    };
+
+    const setImageZoomScale = (slideNode, img, requestedScale) => {
+      if (!slideNode || !img) {
+        return;
+      }
+
+      const targetScale = clampZoomScale(requestedScale);
+
+      if (targetScale <= 0) {
+        if (isNativeZoomAvailable(slideNode, img)) {
+          restoreNativeZoom(img);
+          dispatchNativeImageClick(img);
+        } else {
+          clearManualZoom(slideNode, img);
+        }
+        requestAnimationFrame(updateZoomButtons);
+        return;
+      }
+
+      if (canUseNativeZoom(img)) {
+        if (!slideNode.classList.contains("zoomed")) {
+          dispatchNativeImageClick(img);
+          updateZoomButtons();
+          return;
+        } else if (getCurrentZoomScale(slideNode, img) == 1 && targetScale > 1) {
+          // Calculate and apply manual zoom offset to keep the image position
+          // consistent when switching to manual zoom
+          const imgContainerRect = getImageContainer(img).getBoundingClientRect();
+          const imgRect = img.getBoundingClientRect();
+          applyManualZoomOffset(img,
+            imgRect.left - imgContainerRect.left,
+            imgRect.top - imgContainerRect.top
+          );
+        }
+      }
+
+      applyZoom(slideNode, img, targetScale);
+      updateZoomButtons();
+    };
+
+    const adjustActiveImageZoom = (direction) => {
+      const slideNode = document.querySelector(".gslide.current");
+      const img = getSlideImage(slideNode);
+
+      if (!slideNode || !img) {
+        updateZoomButtons();
+        return;
+      }
+
+      const currentScale = getCurrentZoomScale(slideNode, img);
+      const targetScale = getNextZoomScale(currentScale, direction);
+
+      setImageZoomScale(slideNode, img, targetScale);
+    };
+
+    const prepareImageZoom = (slideNode) => {
+      const img = getSlideImage(slideNode);
+      if (!slideNode || !img || img.dataset.rgZoomPrepared === "true") {
+        return;
+      }
+
+      img.dataset.rgZoomPrepared = "true";
+
+      let activePointerId = null;
+      let startPointerX = 0;
+      let startPointerY = 0;
+      let startOffsetX = 0;
+      let startOffsetY = 0;
+
+      const stopManualDrag = () => {
+        activePointerId = null;
+        img.classList.remove("dragging");
+
+        setTimeout(() => {
+          img.isDragging = false;
+        }, 100);
+      };
+
+      const onPointerMove = (event) => {
+        if (activePointerId !== event.pointerId) {
+          return;
+        }
+
+        event.preventDefault();
+
+        const currentScale = getCurrentZoomScale(slideNode, img);
+        const nextOffsetX = startOffsetX + (event.clientX - startPointerX) / currentScale;
+        const nextOffsetY = startOffsetY + (event.clientY - startPointerY) / currentScale;
+        img.isDragging = true;
+        applyManualZoomOffset(img, nextOffsetX, nextOffsetY);
+      };
+
+      const onPointerUp = (event) => {
+        if (activePointerId !== event.pointerId) {
+          return;
+        }
+
+        if (img.hasPointerCapture?.(event.pointerId)) {
+          img.releasePointerCapture(event.pointerId);
+        }
+
+        stopManualDrag();
+      };
+
+      img.addEventListener("pointerdown", (event) => {
+        const currentScale = getCurrentZoomScale(slideNode, img);
+        const isManualZoom = img.dataset.rgZoomMode === "manual";
+
+        if (
+          !isManualZoom ||
+          currentScale <= 1 ||
+          (event.pointerType === "mouse" && event.button !== 0)
+        ) {
+          return;
+        }
+
+        const currentOffset = getManualZoomOffset(img);
+        activePointerId = event.pointerId;
+        startPointerX = event.clientX;
+        startPointerY = event.clientY;
+        startOffsetX = currentOffset.x;
+        startOffsetY = currentOffset.y;
+        img.isDragging = false;
+        img.classList.add("dragging");
+        img.setPointerCapture?.(event.pointerId);
+        event.preventDefault();
+      });
+
+      img.addEventListener("pointermove", onPointerMove);
+      img.addEventListener("pointerup", onPointerUp);
+      img.addEventListener("pointercancel", onPointerUp);
+
+      img.addEventListener(
+        "click",
+        (event) => {
+          const currentScale = getCurrentZoomScale(slideNode, img);
+
+          if (currentScale > 1) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!img.isDragging) {
+              setImageZoomScale(slideNode, img, 1);
+            }
+          }
+        },
+        true,
+      );
+
+      img.addEventListener("click", () => {
+        requestAnimationFrame(() => {
+          syncImageZoomState(slideNode);
+        });
+      });
+    };
+
     const ensureImageLoaded = (payload) => {
       const slideNode = payload?.slide;
       if (!slideNode) {
@@ -409,6 +815,36 @@
       return button;
     }
 
+    // Create zoom-in button
+    function createZoomInButton() {
+      const button = document.createElement("button");
+      button.className = "glightbox-zoom-in";
+      button.setAttribute("title", "Zoom in");
+      button.setAttribute("aria-label", "Zoom in");
+      // Bootstrap Icons zoom-in SVG (to avoid confusion with existing zoom icons in GLightbox)
+      button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-zoom-in" viewBox="0 0 16 16">`
+        + `<path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11M13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0"/>`
+        + `<path d="M10.344 11.742q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1 6.5 6.5 0 0 1-1.398 1.4z"/>`
+        + `<path fill-rule="evenodd" d="M6.5 3a.5.5 0 0 1 .5.5V6h2.5a.5.5 0 0 1 0 1H7v2.5a.5.5 0 0 1-1 0V7H3.5a.5.5 0 0 1 0-1H6V3.5a.5.5 0 0 1 .5-.5"/>`
+        + `</svg>`;
+      return button;
+    }
+
+    // Create zoom-out button
+    function createZoomOutButton() {
+      const button = document.createElement("button");
+      button.className = "glightbox-zoom-out";
+      button.setAttribute("title", "Zoom out");
+      button.setAttribute("aria-label", "Zoom out");
+      // Bootstrap Icons zoom-out SVG (to avoid confusion with existing zoom icons in GLightbox)
+      button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-zoom-out" viewBox="0 0 16 16">`
+        + `<path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11M13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0"/>`
+        + `<path d="M10.344 11.742q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1 6.5 6.5 0 0 1-1.398 1.4z"/>`
+        + `<path fill-rule="evenodd" d="M3 6.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5"/>`
+        + `</svg>`;
+      return button;
+    }
+
     function getParents(el, selector) {
       const parents = [];
       while ((el = el.parentElement) !== null) {
@@ -440,6 +876,25 @@
           container.appendChild(thumbPanel);
         }
 
+        const customButtonsContainer = document.createElement("div");
+        customButtonsContainer.className = "glightbox-custom-buttons";
+
+        zoomInButton = createZoomInButton();
+        zoomInButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          adjustActiveImageZoom(1);
+        });
+        customButtonsContainer.appendChild(zoomInButton);
+
+        zoomOutButton = createZoomOutButton();
+        zoomOutButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          adjustActiveImageZoom(-1);
+        });
+        customButtonsContainer.appendChild(zoomOutButton);
+
         // Create and add thumbnail toggle button
         const toggleButton = createThumbnailToggleButton();
         toggleButton.addEventListener("click", (e) => {
@@ -450,13 +905,17 @@
           );
           thumbPanel.classList.toggle("glightbox-thumbs-collapsed", isVisible);
         });
+        customButtonsContainer.appendChild(toggleButton);
+
         const closeBtn = container.querySelector(".gclose");
         if (closeBtn && !closeBtn.querySelector(".glightbox-toggle-thumbs")) {
-          closeBtn.parentElement.insertBefore(toggleButton, closeBtn);
+          closeBtn.parentElement.insertBefore(customButtonsContainer, closeBtn);
         }
 
         const index = lightbox.getActiveSlideIndex();
         updateActiveThumbnail(index);
+        prepareImageZoom(document.querySelector(".gslide.current"));
+        updateZoomButtons();
 
         // Update URL with current attachment ID on open
         // Use push for normal open, replace for history navigation to avoid creating duplicate history
@@ -469,6 +928,10 @@
       },
       beforeSlideChange: (_prev, current) => {
         updateActiveThumbnail(current.index);
+        requestAnimationFrame(() => {
+          prepareImageZoom(document.querySelector(".gslide.current"));
+          updateZoomButtons();
+        });
 
         // Update URL when slide changes with attachment ID (without creating new history entry)
         updateUrl(attachmentIds[current.index]);
@@ -476,9 +939,13 @@
       afterSlideLoad: (payload) => {
         ensureImageLoaded(payload);
         renderFilename(payload);
+        prepareImageZoom(payload?.slide);
+        updateZoomButtons();
       },
       onClose: () => {
         isLightboxOpen = false;
+        zoomInButton = null;
+        zoomOutButton = null;
         // When user closes manually, create new history entry without glightbox query
         if (!isClosingFromPopstate) {
           updateUrl(null, "push");
@@ -508,9 +975,9 @@
     let targetElements = Array.from(
       document.querySelectorAll(
         "a[href]" +
-          ':not([data-method="delete"])' +
-          ':not([href*="/attachments/download/"])' +
-          ", img[src]",
+        ':not([data-method="delete"])' +
+        ':not([href*="/attachments/download/"])' +
+        ", img[src]",
       ),
     )
       .filter((el) => {

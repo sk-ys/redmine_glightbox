@@ -43,7 +43,7 @@
 
 /* Hide filename when hovering over image */
 .gslide.current .ginner-container:has(img:hover) ~ .glightbox-filename {
-    opacity: 0;
+  opacity: 0;
 }
 
 .gslide.current:not(
@@ -93,6 +93,22 @@
 
 .gslide-inline .gslide-media {
   overflow: hidden;
+}
+
+.gslide-image img {
+  /* TODO: Add transition for smooth zooming */
+  /*
+  transition:
+    height 0.5s,
+    width 0.5s,
+    transform 0.5s;
+    */
+  &.rg-manual-zoom {
+    cursor: grab;
+    &.dragging {
+      cursor: grabbing;
+    }
+  }
 }
 
 .glightbox-pdf-iframe {
@@ -211,48 +227,66 @@
   border-color: rgba(255, 255, 255, 0.8);
 }
 
-/* Thumbnail toggle button */
-.glightbox-toggle-thumbs {
-  width: 35px;
-  height: 35px;
-  padding: 6px;
+.glightbox-custom-buttons {
   position: absolute;
   top: 15px;
   right: calc(10px + 35px); /* Space for .gclose button */
-  background-color: rgba(0, 0, 0, 0.32);
-  border-radius: 4px 0 0 4px;
-  border: none;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 1);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    opacity 0.05s ease;
-  opacity: 1;
+  gap: 0;
+
+  button {
+    width: 35px;
+    height: 35px;
+    padding: 6px;
+    background-color: rgba(0, 0, 0, 0.32);
+    border-radius: 0;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      opacity 0.05s ease;
+
+    &:first-of-type {
+      border-radius: 4px 0 0 4px;
+    }
+  }
 }
-#glightbox-body.glightbox-closing .glightbox-toggle-thumbs {
+
+#glightbox-body.glightbox-closing .glightbox-custom-buttons {
   opacity: 0;
 }
 
-.glightbox-toggle-thumbs + .gclose {
+.glightbox-custom-buttons + .gclose {
   border-radius: 0 4px 4px 0;
 }
 
 @media (min-width: 992px) {
-  .glightbox-clean .glightbox-toggle-thumbs {
+  .glightbox-clean .glightbox-custom-buttons {
     right: calc(20px + 35px); /* Account for space taken by .gclose button */
-    opacity: 0.7; /* Matches .gclose button styling */
+    button {
+      opacity: 0.7; /* Matches .gclose button styling */
+    }
   }
 }
 
-.glightbox-toggle-thumbs:hover {
+.glightbox-custom-buttons button:hover {
   background-color: rgba(0, 0, 0, 0.7);
-  color: white;
   outline: none;
   opacity: 1;
+}
+
+.glightbox-custom-buttons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.glightbox-custom-buttons button svg {
+  flex-shrink: 0;
 }
 
 .glightbox-toggle-thumbs .toggle-icon {

@@ -14,6 +14,16 @@ module RedmineGlightbox
       controller = context[:controller]
       return unless include_glightbox_assets?(controller)
 
+      "<SCRIPT>" +
+      "window.redmineGLightbox = {" +
+      "  'i18n': {" +
+      "    'label_toggle_thumbs': '#{I18n.t('redmine_glightbox.label_toggle_thumbs')}'," +
+      "    'label_toggle_bg': '#{I18n.t('redmine_glightbox.label_toggle_bg')}'," +
+      "    'label_zoom_in': '#{I18n.t('redmine_glightbox.label_zoom_in')}'," +
+      "    'label_zoom_out': '#{I18n.t('redmine_glightbox.label_zoom_out')}'," +
+      "  }" +
+      "}" +
+      "</SCRIPT>" +
       stylesheet_link_tag('glightbox.min', plugin: 'redmine_glightbox') +
       stylesheet_link_tag('redmine_glightbox', plugin: 'redmine_glightbox') +
       javascript_include_tag('glightbox.min', plugin: 'redmine_glightbox') +

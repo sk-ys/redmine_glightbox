@@ -845,8 +845,11 @@
     function createThumbnailToggleButton() {
       const button = document.createElement("button");
       button.className = "glightbox-toggle-thumbs";
-      button.setAttribute("title", "Toggle thumbnails");
-      button.setAttribute("aria-label", "Toggle thumbnails");
+      const label_toggle_thumbs =
+        window.redmineGLightbox.i18n?.label_toggle_thumbs ||
+        "Toggle thumbnails";
+      button.setAttribute("title", label_toggle_thumbs);
+      button.setAttribute("aria-label", label_toggle_thumbs);
       // SVG for hide icon
       button.innerHTML =
         '<svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="0" y="2" width="24" height="20"/><rect x="2" y="16" width="5" height="5"/><rect x="9.5" y="16" width="5" height="5"/><rect x="17" y="16" width="5" height="5"/></svg>';
@@ -867,8 +870,9 @@
     function createBackgroundToggleButton() {
       const button = document.createElement("button");
       button.className = "glightbox-toggle-bg";
-      button.setAttribute("title", "Toggle background color");
-      button.setAttribute("aria-label", "Toggle background color");
+      const label_toggle_bg = window.redmineGLightbox?.i18n?.label_toggle_bg || "Toggle background color";
+      button.setAttribute("title", label_toggle_bg);
+      button.setAttribute("aria-label", label_toggle_bg);
       // Default to dark background icon
       button.innerHTML = darkBGIconSvg;
       return button;
@@ -878,8 +882,9 @@
     function createZoomInButton() {
       const button = document.createElement("button");
       button.className = "glightbox-zoom-in";
-      button.setAttribute("title", "Zoom in");
-      button.setAttribute("aria-label", "Zoom in");
+      const label_zoom_in = window.redmineGLightbox?.i18n?.label_zoom_in || "Zoom in";
+      button.setAttribute("title", label_zoom_in);
+      button.setAttribute("aria-label", label_zoom_in);
       // Bootstrap Icons zoom-in SVG (to avoid confusion with existing zoom icons in GLightbox)
       button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-zoom-in" viewBox="0 0 16 16">`
         + `<path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11M13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0"/>`
@@ -893,8 +898,9 @@
     function createZoomOutButton() {
       const button = document.createElement("button");
       button.className = "glightbox-zoom-out";
-      button.setAttribute("title", "Zoom out");
-      button.setAttribute("aria-label", "Zoom out");
+      const label_zoom_out = window.redmineGLightbox?.i18n?.label_zoom_out || "Zoom out";
+      button.setAttribute("title", label_zoom_out);
+      button.setAttribute("aria-label", label_zoom_out);
       // Bootstrap Icons zoom-out SVG (to avoid confusion with existing zoom icons in GLightbox)
       button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-zoom-out" viewBox="0 0 16 16">`
         + `<path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11M13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0"/>`

@@ -1,3 +1,7 @@
 # English strings go here for Rails i18n
 en:
-  # my_label: "My label"
+  redmine_glightbox:
+    label_toggle_thumbs: "Toggle thumbnails"
+    label_toggle_bg: "Toggle background color"
+    label_zoom_in: "Zoom in"
+    label_zoom_out: "Zoom out"

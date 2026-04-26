@@ -71,13 +71,19 @@ window.redmineGLightbox.regenerate();
 ## Requirements
 
 - Redmine 6.1 (Other versions are untested.)
-- GLightbox library (bundled in assets/)
+
+## Dependencies
+
+- [GLightbox](https://biati-digital.github.io/glightbox/) (bundled in `assets/javascripts`)
+- [Bootstrap Icons](https://icons.getbootstrap.com/) SVGs (inlined in JavaScript)
 
 ## License
 
 This plugin is licensed under GPLv3. See LICENSE file for details.
 
-GLightbox is licensed under the MIT License: https://github.com/biati-digital/glightbox/blob/master/LICENSE
+GLightbox is licensed under the MIT License: https://github.com/biati-digital/glightbox/blob/master/LICENSE.md
+
+Bootstrap Icons SVGs are licensed under the MIT License: https://github.com/twbs/icons/blob/main/LICENSE
 
 ## Support
 

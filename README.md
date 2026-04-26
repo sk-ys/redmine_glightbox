@@ -77,6 +77,22 @@ window.redmineGLightbox.regenerate();
 - [GLightbox](https://biati-digital.github.io/glightbox/) (bundled in `assets/javascripts`)
 - [Bootstrap Icons](https://icons.getbootstrap.com/) SVGs (inlined in JavaScript)
 
+## Dependabot
+
+This repository includes a minimal `package.json` and `.github/dependabot.yml` so GitHub Dependabot can track new GLightbox releases and open update PRs automatically.
+
+When a GLightbox update PR is created, sync bundled assets with Node.js:
+
+```bash
+npm install
+npm run sync:glightbox
+```
+
+This copies the latest files from `node_modules/glightbox/dist` into:
+
+- `assets/javascripts/glightbox.min.js`
+- `assets/stylesheets/glightbox.min.css`
+
 ## License
 
 This plugin is licensed under GPLv3. See LICENSE file for details.

@@ -1,0 +1,11 @@
+{
+  "name": "redmine_glightbox",
+  "private": true,
+  "description": "Dependency tracking for bundled GLightbox assets",
+  "scripts": {
+    "sync:glightbox": "node scripts/sync-glightbox.mjs"
+  },
+  "devDependencies": {
+    "glightbox": "^3.3.1"
+  }
+}

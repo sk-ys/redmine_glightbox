@@ -990,8 +990,10 @@
 
         const index = lightbox.getActiveSlideIndex();
         updateActiveThumbnail(index);
-        zoomController.prepareImageZoom(document.querySelector(".gslide.current"));
-        zoomController.updateZoomButtons();
+        if (zoomController) {
+          zoomController.prepareImageZoom(document.querySelector(".gslide.current"));
+          zoomController.updateZoomButtons();
+        }
 
         // Update URL with current attachment ID on open
         // Use push for normal open, replace for history navigation to avoid creating duplicate history
@@ -1004,10 +1006,12 @@
       },
       beforeSlideChange: (_prev, current) => {
         updateActiveThumbnail(current.index);
-        requestAnimationFrame(() => {
-          zoomController.prepareImageZoom(document.querySelector(".gslide.current"));
-          zoomController.updateZoomButtons();
-        });
+        if (zoomController) {
+          requestAnimationFrame(() => {
+            zoomController.prepareImageZoom(document.querySelector(".gslide.current"));
+            zoomController.updateZoomButtons();
+          });
+        }
 
         // Update URL when slide changes with attachment ID (without creating new history entry)
         updateUrl(attachmentIds[current.index]);
@@ -1015,8 +1019,10 @@
       afterSlideLoad: (payload) => {
         ensureImageLoaded(payload);
         renderFilename(payload);
-        zoomController.prepareImageZoom(payload?.slide);
-        zoomController.updateZoomButtons();
+        if (zoomController) {
+          zoomController.prepareImageZoom(payload?.slide);
+          zoomController.updateZoomButtons();
+        }
       },
       onClose: () => {
         isLightboxOpen = false;

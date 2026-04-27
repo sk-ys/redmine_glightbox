@@ -42,7 +42,9 @@
 }
 
 /* Hide filename when hovering over image */
-.gslide.current .ginner-container:has(img:hover) ~ .glightbox-filename {
+.gslide.current
+  .ginner-container:has(img:hover, .ginlined-content:hover)
+  ~ .glightbox-filename {
   opacity: 0;
 }
 

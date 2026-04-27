@@ -44,7 +44,10 @@
 /* Hide filename when hovering over image */
 .gslide.current
   .ginner-container:has(img:hover, .ginlined-content:hover)
-  ~ .glightbox-filename {
+  ~ .glightbox-filename,
+.glightbox-container:has(.glightbox-thumbs-collapsed)
+  .gslide.current
+  .glightbox-filename {
   opacity: 0;
 }
 

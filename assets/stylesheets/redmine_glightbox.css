@@ -305,6 +305,17 @@
   stroke-linejoin: round;
 }
 
+.gslider:not(:has(.gslide.current .gslide-media.gslide-image))
+  + .glightbox-custom-buttons
+ {
+  :is(.glightbox-zoom-in, .glightbox-zoom-out) {
+    display: none;
+  }
+  .glightbox-toggle-bg {
+    border-radius: 4px 0 0 4px;
+  }
+}
+
 .glightbox-target {
   cursor: pointer;
 }

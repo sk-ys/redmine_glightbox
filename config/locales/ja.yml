@@ -5,3 +5,4 @@ ja:
     label_toggle_bg: "背景色の切り替え"
     label_zoom_in: "拡大"
     label_zoom_out: "縮小"
+    alert_download_failed: "添付ファイルのダウンロードに失敗しました。"

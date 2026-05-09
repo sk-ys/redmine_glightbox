@@ -5,3 +5,4 @@ en:
     label_toggle_bg: "Toggle background color"
     label_zoom_in: "Zoom in"
     label_zoom_out: "Zoom out"
+    alert_download_failed: "Failed to download attachment."

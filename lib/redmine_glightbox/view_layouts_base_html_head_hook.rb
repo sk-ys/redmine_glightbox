@@ -21,6 +21,8 @@ module RedmineGlightbox
       "    'label_toggle_bg': '#{I18n.t('redmine_glightbox.label_toggle_bg')}'," +
       "    'label_zoom_in': '#{I18n.t('redmine_glightbox.label_zoom_in')}'," +
       "    'label_zoom_out': '#{I18n.t('redmine_glightbox.label_zoom_out')}'," +
+      "    'label_download': '#{I18n.t('button_download')}'," +
+      "    'alert_download_failed': '#{I18n.t('redmine_glightbox.alert_download_failed')}'" +
       "  }" +
       "}" +
       "</SCRIPT>" +

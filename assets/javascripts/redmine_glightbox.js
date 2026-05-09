@@ -727,6 +727,7 @@
 
         return {
           type: "inline",
+          url: url,
           content: videoHtml,
           width: "90vw",
           height: "90vh",
@@ -740,6 +741,7 @@
         const iframeHtml = `<iframe class="glightbox-pdf-iframe" src="${url}" style="width: 100%; height: 100%;" loading="lazy"></iframe>`;
         return {
           type: "inline",
+          url: url,
           content: iframeHtml,
           title: caption,
           width: "90vw",
@@ -749,8 +751,9 @@
       }
 
       return {
-        href: url,
         type: "image",
+        href: url,
+        url: url,
         title: caption,
         thumb: thumbnailImgEl?.src || url,
         alt: caption,
@@ -840,6 +843,20 @@
         (inner || slideNode).appendChild(label);
       }
     };
+
+    function createDownloadButton() {
+      const button = document.createElement("button");
+      button.className = "glightbox-download-btn";
+      const label_download =
+        window.redmineGLightbox.i18n?.label_download || "Download";
+      button.setAttribute("title", label_download);
+      button.setAttribute("aria-label", label_download);
+      button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+          <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+          <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+        </svg>`;
+      return button;
+    }
 
     // Create thumbnail toggle button
     function createThumbnailToggleButton() {
@@ -970,6 +987,24 @@
           bgToggleButton.innerHTML = isLight ? lightBGIconSvg : darkBGIconSvg;
         });
         customButtonsContainer.appendChild(bgToggleButton);
+
+        const downloadButton = createDownloadButton();
+        downloadButton.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const attachment = glightboxContent[currentLightbox.index];
+          if (!attachment || !attachment.url) {
+            console.warn("Attachment data not found for download");
+            alert(window.redmineGLightbox?.i18n?.alert_download_failed || "Failed to download attachment.");
+            return;
+          }
+
+          const link = document.createElement("a");
+          link.href = attachment.url;
+          link.setAttribute("download", attachment.filename);
+          link.click();
+        });
+        customButtonsContainer.appendChild(downloadButton);
 
         // Create and add thumbnail toggle button
         const toggleButton = createThumbnailToggleButton();

@@ -1220,10 +1220,12 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     // Compatible with Redmine Lazy Load History plugin
-    document.querySelectorAll(".lazy-load-history").forEach((container) => {
-      container.addEventListener("lazyLoadHistory:loaded", (event) => {
-        window.redmineGLightbox.regenerate();
+    document
+      .querySelectorAll(".lazy-load-history, #lazy-load-history")
+      .forEach((container) => {
+        container.addEventListener("lazyLoadHistory:loaded", (event) => {
+          window.redmineGLightbox.regenerate();
+        });
       });
-    });
   });
 })();

@@ -810,8 +810,9 @@
             currentEmlBlobUrls.push(bodyBlobUrl);
           }
           const iframeSection = bodyBlobUrl
-            // sandbox="" blocks scripts and same-origin access for untrusted email HTML;
-            // external images in the email body will not load as a result of this restriction.
+            // sandbox="" blocks scripts, form submission, and same-origin access for
+            // untrusted email HTML. Note: external images (e.g. tracking pixels) are
+            // still loaded; to block them a Content-Security-Policy would be required.
             ? `<iframe class="glightbox-eml-body" src="${bodyBlobUrl}" sandbox="" style="width:100%;flex:1;border:none;background:#fff;" loading="lazy"></iframe>`
             : "";
 

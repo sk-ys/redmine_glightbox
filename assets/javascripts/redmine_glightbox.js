@@ -1143,9 +1143,6 @@
       },
       onClose: () => {
         isLightboxOpen = false;
-        // Revoke EML blob URLs to free memory
-        currentEmlBlobUrls.forEach((blobUrl) => URL.revokeObjectURL(blobUrl));
-        currentEmlBlobUrls = [];
         // When user closes manually, create new history entry without glightbox query
         if (!isClosingFromPopstate) {
           updateUrl(null, "push");

@@ -31,6 +31,7 @@
   // Store state for regeneration
   let currentLightbox = null;
   let currentThumbnailPanel = null;
+  let currentEmlBlobUrls = [];
 
   function parseAttachmentIdFromUrl(url) {
     const match = url.match(
@@ -148,6 +149,10 @@
       currentThumbnailPanel.remove();
       currentThumbnailPanel = null;
     }
+
+    // Revoke any EML blob URLs to free memory
+    currentEmlBlobUrls.forEach((blobUrl) => URL.revokeObjectURL(blobUrl));
+    currentEmlBlobUrls = [];
 
     // Remove event handlers and class from target elements
     $("#content").off("click", ".glightbox-target");
@@ -704,9 +709,6 @@
     // Extract attachment IDs
     const attachmentIds = attachments.map((attachment) => attachment.id);
 
-    // Track EML blob URLs to revoke on close
-    const emlBlobUrls = [];
-
     // Utility functions for EML rendering
     const escapeHtml = (str) =>
       String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -805,9 +807,11 @@
             ? URL.createObjectURL(new Blob([bodyHtml], { type: "text/html" }))
             : null;
           if (bodyBlobUrl) {
-            emlBlobUrls.push(bodyBlobUrl);
+            currentEmlBlobUrls.push(bodyBlobUrl);
           }
           const iframeSection = bodyBlobUrl
+            // sandbox="" blocks scripts and same-origin access for untrusted email HTML;
+            // external images in the email body will not load as a result of this restriction.
             ? `<iframe class="glightbox-eml-body" src="${bodyBlobUrl}" sandbox="" style="width:100%;flex:1;border:none;background:#fff;" loading="lazy"></iframe>`
             : "";
 
@@ -1139,7 +1143,8 @@
       onClose: () => {
         isLightboxOpen = false;
         // Revoke EML blob URLs to free memory
-        emlBlobUrls.forEach((blobUrl) => URL.revokeObjectURL(blobUrl));
+        currentEmlBlobUrls.forEach((blobUrl) => URL.revokeObjectURL(blobUrl));
+        currentEmlBlobUrls = [];
         // When user closes manually, create new history entry without glightbox query
         if (!isClosingFromPopstate) {
           updateUrl(null, "push");

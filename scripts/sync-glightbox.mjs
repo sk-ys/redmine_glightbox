@@ -1,6 +1,7 @@
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import * as esbuild from "esbuild";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,35 +19,19 @@ const copies = [
 ];
 
 async function bundleEmlParseJs() {
-  const base64Src = await readFile(
-    path.join(rootDir, "node_modules", "js-base64", "base64.js"),
-    "utf8",
-  );
-  const emlSrc = await readFile(
-    path.join(rootDir, "node_modules", "eml-parse-js", "dist", "index.iife.js"),
-    "utf8",
-  );
-
-  const bundle = [
-    "(function(global) {",
-    "// --- js-base64 ---",
-    "var Base64;",
-    "(function() {",
-    "  var exports = {};",
-    "  var module = { exports: {} };",
-    base64Src,
-    "  Base64 = module.exports.Base64 || module.exports;",
-    "})();",
-    "",
-    "// --- eml-parse-js ---",
-    emlSrc,
-    "global.EmlParseJs = EmlParseJs;",
-    "})(typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : this);",
-  ].join("\n");
-
   const dest = path.join(rootDir, "assets", "javascripts", "eml-parse-js.js");
   await mkdir(path.dirname(dest), { recursive: true });
-  await writeFile(dest, bundle, "utf8");
+  await esbuild.build({
+    stdin: {
+      contents: 'export * from "eml-parse-js";',
+      resolveDir: rootDir,
+    },
+    bundle: true,
+    globalName: "EmlParseJs",
+    format: "iife",
+    outfile: dest,
+    platform: "browser",
+  });
   console.log(`Bundled eml-parse-js -> ${path.relative(rootDir, dest)}`);
 }
 

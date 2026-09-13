@@ -707,6 +707,18 @@
     // Track EML blob URLs to revoke on close
     const emlBlobUrls = [];
 
+    // Utility functions for EML rendering
+    const escapeHtml = (str) =>
+      String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const formatAddress = (addr) => {
+      if (!addr) return "";
+      if (Array.isArray(addr)) return addr.map(formatAddress).join(", ");
+      if (typeof addr === "string") return escapeHtml(addr);
+      const name = addr.name ? escapeHtml(addr.name) : "";
+      const email = addr.email ? escapeHtml(addr.email) : "";
+      return name ? `${name} &lt;${email}&gt;` : email;
+    };
+
     // Prepare GLightbox content array
     const glightboxContent = await Promise.all(attachments.map(async (attachment) => {
       const attachmentId = attachment.id;
@@ -780,17 +792,6 @@
 
         let emlHtml;
         if (emlContent) {
-          const escapeHtml = (str) =>
-            String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-          const formatAddress = (addr) => {
-            if (!addr) return "";
-            if (Array.isArray(addr)) return addr.map(formatAddress).join(", ");
-            if (typeof addr === "string") return escapeHtml(addr);
-            const name = addr.name ? escapeHtml(addr.name) : "";
-            const email = addr.email ? escapeHtml(addr.email) : "";
-            return name ? `${name} &lt;${email}&gt;` : email;
-          };
-
           const headers = [
             emlContent.from ? `<tr><th>From</th><td>${formatAddress(emlContent.from)}</td></tr>` : "",
             emlContent.to ? `<tr><th>To</th><td>${formatAddress(emlContent.to)}</td></tr>` : "",
@@ -807,12 +808,12 @@
             emlBlobUrls.push(bodyBlobUrl);
           }
           const iframeSection = bodyBlobUrl
-            ? `<iframe class="glightbox-eml-body" src="${bodyBlobUrl}" sandbox="allow-same-origin" style="width:100%;flex:1;border:none;background:#fff;" loading="lazy"></iframe>`
+            ? `<iframe class="glightbox-eml-body" src="${bodyBlobUrl}" sandbox="" style="width:100%;flex:1;border:none;background:#fff;" loading="lazy"></iframe>`
             : "";
 
           emlHtml = `<div class="glightbox-eml-container"><table class="glightbox-eml-headers">${headers}</table>${iframeSection}</div>`;
         } else {
-          emlHtml = `<iframe class="glightbox-eml-body" src="${url}" style="width:100%;height:100%;border:none;" loading="lazy"></iframe>`;
+          emlHtml = `<iframe class="glightbox-eml-body" src="${url}" sandbox="" style="width:100%;height:100%;border:none;" loading="lazy"></iframe>`;
         }
 
         return {

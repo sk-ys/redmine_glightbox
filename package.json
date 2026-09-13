@@ -7,5 +7,8 @@
   },
   "devDependencies": {
     "glightbox": "^3.3.1"
+  },
+  "dependencies": {
+    "eml-parse-js": "^1.2.0-beta.1"
   }
 }

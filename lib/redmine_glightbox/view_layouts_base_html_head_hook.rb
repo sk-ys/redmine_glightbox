@@ -29,6 +29,7 @@ module RedmineGlightbox
       stylesheet_link_tag('glightbox.min', plugin: 'redmine_glightbox') +
       stylesheet_link_tag('redmine_glightbox', plugin: 'redmine_glightbox') +
       javascript_include_tag('glightbox.min', plugin: 'redmine_glightbox') +
+      javascript_include_tag('eml-parse-js', plugin: 'redmine_glightbox') +
       javascript_include_tag('redmine_glightbox', plugin: 'redmine_glightbox')
     end
 

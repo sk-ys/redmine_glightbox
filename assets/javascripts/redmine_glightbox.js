@@ -9,6 +9,7 @@
 
   const imgExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"];
   const videoExtensions = ["mp4", "webm", "ogg", "mov", "avi", "flv", "mkv"];
+  const emlExtensions = ["eml"];
   const mimeTypeMap = {
     mp4: "video/mp4",
     webm: "video/webm",
@@ -30,6 +31,7 @@
   // Store state for regeneration
   let currentLightbox = null;
   let currentThumbnailPanel = null;
+  let currentEmlBlobUrls = [];
 
   function parseAttachmentIdFromUrl(url) {
     const match = url.match(
@@ -147,6 +149,10 @@
       currentThumbnailPanel.remove();
       currentThumbnailPanel = null;
     }
+
+    // Revoke any EML blob URLs to free memory
+    currentEmlBlobUrls.forEach((blobUrl) => URL.revokeObjectURL(blobUrl));
+    currentEmlBlobUrls = [];
 
     // Remove event handlers and class from target elements
     $("#content").off("click", ".glightbox-target");
@@ -688,6 +694,8 @@
             "|" +
             videoExtensions.join("|") +
             "|pdf" +
+            "|" +
+            emlExtensions.join("|") +
             ")(\\?|$)",
             "i",
           ),
@@ -701,8 +709,20 @@
     // Extract attachment IDs
     const attachmentIds = attachments.map((attachment) => attachment.id);
 
+    // Utility functions for EML rendering
+    const escapeHtml = (str) =>
+      String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const formatAddress = (addr) => {
+      if (!addr) return "";
+      if (Array.isArray(addr)) return addr.map(formatAddress).join(", ");
+      if (typeof addr === "string") return escapeHtml(addr);
+      const name = addr.name ? escapeHtml(addr.name) : "";
+      const email = addr.email ? escapeHtml(addr.email) : "";
+      return name ? `${name} &lt;${email}&gt;` : email;
+    };
+
     // Prepare GLightbox content array
-    const glightboxContent = attachments.map((attachment) => {
+    const glightboxContent = await Promise.all(attachments.map(async (attachment) => {
       const attachmentId = attachment.id;
       const url = attachment.content_url;
       const isVideo = new RegExp(
@@ -710,6 +730,7 @@
         "i",
       ).test(url.toLowerCase());
       const isPdf = /\.pdf(\?|$)/i.test(url.toLowerCase());
+      const isEml = /\.eml(\?|$)/i.test(url.toLowerCase());
       const caption = attachment.filename;
       const thumbnailImgEl = document.querySelector(
         `img[src*='/attachments/thumbnail/${attachmentId}']`,
@@ -750,6 +771,67 @@
         };
       }
 
+      if (isEml) {
+        const emlIconThumbnail = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23e2e2e2' width='100' height='100'/%3E%3Ctext x='50' y='55' font-size='30' text-anchor='middle' fill='%23333' font-family='Arial, sans-serif'%3EEML%3C/text%3E%3C/svg%3E`;
+        const emlContent = await fetch(url)
+          .then((response) => response.text())
+          .then((text) => {
+            return new Promise((resolve) => {
+              if (typeof EmlParseJs === "undefined" || typeof EmlParseJs.readEml !== "function") {
+                resolve(null);
+                return;
+              }
+              EmlParseJs.readEml(text, (err, result) => {
+                if (err || !result) {
+                  resolve(null);
+                  return;
+                }
+                resolve(result);
+              });
+            });
+          })
+          .catch(() => null);
+
+        let emlHtml;
+        if (emlContent) {
+          const headers = [
+            emlContent.from ? `<tr><th>From</th><td>${formatAddress(emlContent.from)}</td></tr>` : "",
+            emlContent.to ? `<tr><th>To</th><td>${formatAddress(emlContent.to)}</td></tr>` : "",
+            emlContent.cc ? `<tr><th>Cc</th><td>${formatAddress(emlContent.cc)}</td></tr>` : "",
+            emlContent.subject ? `<tr><th>Subject</th><td>${escapeHtml(emlContent.subject)}</td></tr>` : "",
+            emlContent.date ? `<tr><th>Date</th><td>${escapeHtml(String(emlContent.date))}</td></tr>` : "",
+          ].filter(Boolean).join("");
+
+          const bodyHtml = emlContent.html || (emlContent.text ? `<pre style="white-space:pre-wrap;word-break:break-word;">${escapeHtml(emlContent.text)}</pre>` : "");
+          const bodyBlobUrl = bodyHtml
+            ? URL.createObjectURL(new Blob([bodyHtml], { type: "text/html" }))
+            : null;
+          if (bodyBlobUrl) {
+            currentEmlBlobUrls.push(bodyBlobUrl);
+          }
+          const iframeSection = bodyBlobUrl
+            // sandbox="" blocks scripts, form submission, and same-origin access for
+            // untrusted email HTML. Note: external images (e.g. tracking pixels) are
+            // still loaded; to block them a Content-Security-Policy would be required.
+            ? `<iframe class="glightbox-eml-body" src="${bodyBlobUrl}" sandbox="" style="width:100%;flex:1;border:none;background:#fff;" loading="lazy"></iframe>`
+            : "";
+
+          emlHtml = `<div class="glightbox-eml-container"><table class="glightbox-eml-headers">${headers}</table>${iframeSection}</div>`;
+        } else {
+          emlHtml = `<iframe class="glightbox-eml-body" src="${url}" sandbox="" style="width:100%;height:100%;border:none;" loading="lazy"></iframe>`;
+        }
+
+        return {
+          type: "inline",
+          url: url,
+          content: emlHtml,
+          title: caption,
+          width: "90vw",
+          height: "90vh",
+          thumb: thumbnailImgEl?.src || emlIconThumbnail,
+        };
+      }
+
       return {
         type: "image",
         href: url,
@@ -758,7 +840,7 @@
         thumb: thumbnailImgEl?.src || url,
         alt: caption,
       };
-    });
+    }));
 
     // Create thumbnail panel HTML
     const thumbPanel = createThumbnailPanel(glightboxContent);

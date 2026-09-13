@@ -6,9 +6,7 @@
     "sync:glightbox": "node scripts/sync-glightbox.mjs"
   },
   "devDependencies": {
+    "eml-parse-js": "^1.2.0-beta.1",
     "glightbox": "^3.3.1"
-  },
-  "dependencies": {
-    "eml-parse-js": "^1.2.0-beta.1"
   }
 }

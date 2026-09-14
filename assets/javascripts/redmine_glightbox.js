@@ -9,7 +9,7 @@
 
   const imgExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"];
   const videoExtensions = ["mp4", "webm", "ogg", "mov", "avi", "flv", "mkv"];
-  const emlExtensions = ["eml"];
+  const emlExtensions = (typeof EmlParseJs === "undefined") ? [] : ["eml"];
   const mimeTypeMap = {
     mp4: "video/mp4",
     webm: "video/webm",

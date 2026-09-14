@@ -8,4 +8,6 @@ Redmine::Plugin.register :redmine_glightbox do
   version '0.6.1'
   url 'http://github.com/sk-ys/redmine_glightbox'
   author_url 'http://github.com/sk-ys'
+
+  settings default: { 'eml_support' => '0' }, partial: 'settings/redmine_glightbox'
 end

@@ -6,3 +6,4 @@ en:
     label_zoom_in: "Zoom in"
     label_zoom_out: "Zoom out"
     alert_download_failed: "Failed to download attachment."
+  label_redmine_glightbox_eml_support: "Enable EML file support"

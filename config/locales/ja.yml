@@ -6,3 +6,4 @@ ja:
     label_zoom_in: "拡大"
     label_zoom_out: "縮小"
     alert_download_failed: "添付ファイルのダウンロードに失敗しました。"
+  label_redmine_glightbox_eml_support: "EMLファイルのサポートを有効にする"

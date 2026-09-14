@@ -7,6 +7,7 @@ A lightweight image gallery plugin for Redmine that integrates the [GLightbox](h
 - Display images with GLightbox on issues, wiki, news, forums, documents, and files pages (jpg, png, gif, bmp, webp, svg)
 - Display video attachments with HTML5 controls (mp4, webm, ogg, mov, avi, flv, mkv)
 - Display PDF attachments in an inline viewer
+- Display `.eml` (email) attachments — embedded images shown in the gallery (opt-in, disabled by default)
 - **Zoomable images** - Click to zoom, scroll wheel, pinch to zoom
 - **Thumbnail panel** with auto-scroll for easy navigation
 - **Thumbnail toggle** - Show/hide thumbnail panel with a toggle button
@@ -68,7 +69,15 @@ await addNewAttachmentsToDom();
 window.redmineGLightbox.regenerate();
 ```
 
-## Requirements
+## Plugin Settings
+
+Navigate to **Administration → Plugins → Redmine GLightbox → Configure** to access the plugin settings.
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Enable EML file support | Disabled | When enabled, `.eml` (email) files attached to pages are parsed and displayed in the gallery. |
+
+
 
 - Redmine 6.1 (Other versions are untested.)
 

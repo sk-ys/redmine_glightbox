@@ -29,7 +29,7 @@ module RedmineGlightbox
       stylesheet_link_tag('glightbox.min', plugin: 'redmine_glightbox') +
       stylesheet_link_tag('redmine_glightbox', plugin: 'redmine_glightbox') +
       javascript_include_tag('glightbox.min', plugin: 'redmine_glightbox') +
-      javascript_include_tag('eml-parse-js', plugin: 'redmine_glightbox') +
+      (eml_support_enabled? ? javascript_include_tag('eml-parse-js', plugin: 'redmine_glightbox') : '') +
       javascript_include_tag('redmine_glightbox', plugin: 'redmine_glightbox')
     end
 
@@ -40,6 +40,10 @@ module RedmineGlightbox
 
       actions = ALLOWED_CONTROLLER_ACTIONS[controller.controller_name]
       actions&.include?(controller.action_name)
+    end
+
+    def eml_support_enabled?
+      Setting.plugin_redmine_glightbox['eml_support'] == '1'
     end
   end
 end
